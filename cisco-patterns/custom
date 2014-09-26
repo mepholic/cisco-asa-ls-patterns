@@ -1,0 +1,67 @@
+# Cisco Simple Rules
+CISCO_FTP_ACTION (Stored|Retrieved)
+CISCO_ACL_ACTION (Allow|Deny)
+CISCO_NAT_CONN (Built|Teardown)
+CISCO_NAT_TYPE (dynamic|static)
+CISCO_DIRECTION (inbound|outbound)
+CISCO_AAA_STATUS (Successful|Rejected)
+CISCO_AAA_STATUS2 (ACCEPT|REJECT)
+CISCO_AAA_TYPE (authentication|authorization|accounting)
+CISCO_AAA_ACTION (transaction status|retrieved (default|user specific) group policy)
+
+CISCO_IPPORT %{DATA}/%{INT}
+IP_PROTO (TCP|UDP|ICMP)
+LOWER_IP_PROTO (tcp|udp|icmp|protocol [0-9]+)
+
+# Cisco Complex Rules
+CISCO_VPN_TIME ([0-9]+h:[0-9]{2}m:[0-9]{2}s)
+CISCO_HMS_TIME ([0-9]+:[0-9]{2}:[0-9]{2})
+CISCO_SRC (%{DATA:source_interface}:)?%{IP:source_ip}(/%{INT:source_port})?
+CISCO_DST (%{DATA:dest_interface}(\(%{DATA:acl}\))?:)?%{IP:dest_ip}(/%{INT:dest_port})?
+CISCO_OPT_ICMP_ATTR (\s\(type %{INT:icmp_type}, code %{INT:icmp_code}\))?
+
+# Rule specific patterns
+CISCO_110002_REASON ^(Failed to locate egress interface)
+CISCO_110003_REASON ^(Routing failed to locate next hop)
+CISCO_113019_ACTION (Session disconnected)
+CISCO_305005_REASON (No translation group found)
+CISCO_305006_REASON ((outbound static|identity|portmap|regular) translation creation failed)
+CISCO_305013_REASON (Asymmetric NAT rules matched for forward and reverse flows|NAT reverse path failure)
+
+# Cisco Alert Severity
+CFWT_106015 %{CISCO_ACL_ACTION:acl_action} %{IP_PROTO:protocol} \(%{DATA:reason}\) from %{CISCO_SRC} to %{CISCO_DST} flags %{DATA:tcp_flags} on interface %{GREEDYDATA:interface}
+CFWT_106016 %{CISCO_ACL_ACTION:acl_action} %{DATA:reason} from \(%{IP:source_ip}\) to %{IP:dest_ip} on interface %{GREEDYDATA:interface}
+CFWT_106023 %{CISCO_ACL_ACTION:acl_action} %{LOWER_IP_PROTO:protocol} src %{CISCO_SRC} dst %{CISCO_DST}%{CISCO_OPT_ICMP_ATTR} by access-group "%{DATA:acl}" %{GREEDYDATA:acl_id}
+
+CFWT_110002 %{CISCO_110002_REASON:reason} for %{IP_PROTO:protocol} from %{CISCO_SRC} to %{CISCO_DST}
+CFWT_110003 %{CISCO_110003_REASON:reason} for %{LOWER_IP_PROTO:protocol} from %{CISCO_SRC} to %{CISCO_DST}
+
+CFWT_113004 AAA user %{CISCO_AAA_TYPE:aaa_type} %{CISCO_AAA_STATUS:aaa_status} : server = %{DATA:aaa_server} : user = %{GREEDYDATA:aaa_user}
+CFWT_113008 AAA %{CISCO_AAA_ACTION:aaa_action} %{CISCO_AAA_STATUS2:aaa_status} : user = %{GREEDYDATA:aaa_user}
+CFWT_113009 AAA %{CISCO_AAA_ACTION:aaa_action} \(%{DATA:group_policy}\) for user = %{GREEDYDATA:aaa_user}
+CFWT_113011 AAA %{CISCO_AAA_ACTION:aaa_action} \(%{DATA:group_policy}\) for user = %{GREEDYDATA:aaa_user}
+CFWT_113012 AAA user %{CISCO_AAA_TYPE:aaa_type} %{CISCO_AAA_STATUS:aaa_status} : %{DATA:aaa_server} : user = %{GREEDYDATA:aaa_user}
+CFWT_113015 AAA user %{CISCO_AAA_TYPE:aaa_type} %{CISCO_AAA_STATUS:aaa_status} : reason = %{DATA:reason} : %{DATA:aaa_server} : user = %{GREEDYDATA:aaa_user}
+
+CFWT_113019 Group = %{DATA:vpn_group}, Username = %{DATA:vpn_user}, IP = %{DATA:vpn_peer}, %{CISCO_113019_ACTION:vpn_action}\. Session Type: %{DATA:vpn_type}, Duration: %{CISCO_VPN_TIME:duration}, Bytes xmt: %{INT:bytes_xmt}, Bytes rcv: %{INT:bytes_rcv}, Reason: %{GREEDYDATA:reason}
+
+# Cisco Error Severity
+CFWT_302010 %{INT:cur_connections:int} in use, %{INT:max_connections:int} most used
+
+CFWT_302013 %{CISCO_NAT_CONN:nat_action} %{CISCO_DIRECTION:nat_direction} %{IP_PROTO:protocol} connection %{POSINT:connection_id} for %{CISCO_SRC} \(%{CISCO_IPPORT:mapped_input_address}\) to %{CISCO_DST} \(%{CISCO_IPPORT:mapped_output_address}\)
+CFWT_302014 %{CISCO_NAT_CONN:nat_action} %{IP_PROTO:protocol} connection %{POSINT:connection_id} for %{CISCO_SRC} to %{CISCO_DST} duration %{CISCO_HMS_TIME:duration} bytes %{INT:bytes} %{GREEDYDATA:reason}
+CFWT_302015 %{CISCO_NAT_CONN:nat_action} %{CISCO_DIRECTION:nat_direction} %{IP_PROTO:protocol} connection %{POSINT:connection_id} for %{CISCO_SRC} \(%{CISCO_IPPORT:mapped_input_address}\) to %{CISCO_DST} \(%{CISCO_IPPORT:mapped_output_address}\)
+CFWT_302016 %{CISCO_NAT_CONN:nat_action} %{IP_PROTO:protocol} connection %{POSINT:connection_id} for %{CISCO_SRC} to %{CISCO_DST} duration %{CISCO_HMS_TIME:duration} bytes %{INT:bytes}
+
+CFWT_302020 %{CISCO_NAT_CONN:nat_action} %{CISCO_DIRECTION:nat_direction} %{IP_PROTO:protocol} connection for faddr %{CISCO_IPPORT:foreign_addr} gaddr %{CISCO_IPPORT:global_addr} laddr %{CISCO_IPPORT:local_addr}
+CFWT_302021 %{CISCO_NAT_CONN:nat_action} %{IP_PROTO:protocol} connection for faddr %{CISCO_IPPORT:foreign_addr} gaddr %{CISCO_IPPORT:global_addr} laddr %{CISCO_IPPORT:local_addr}
+
+CFWT_303002 FTP connection from %{CISCO_SRC} to %{CISCO_DST}, user %{USER:ftp_user} %{CISCO_FTP_ACTION:ftp_action} file %{GREEDYDATA:ftp_file}
+
+CFWT_304001 (%{DATA:user}@)?%{IP:source_ip} Accessed URL %{IP:dest_ip}:%{GREEDYDATA:url}
+
+CFWT_305005 %{CISCO_305005_REASON:reason} for %{LOWER_IP_PROTO:protocol} src %{CISCO_SRC} dst %{CISCO_DST}
+CFWT_305006 %{CISCO_305006_REASON:reason} for %{LOWER_IP_PROTO:protocol} src %{CISCO_SRC} dst %{CISCO_DST}
+CFWT_305011 %{CISCO_NAT_CONN:nat_action} %{CISCO_NAT_TYPE:nat_type} %{IP_PROTO:protocol} translation from %{CISCO_SRC} to %{CISCO_DST}
+CFWT_305012 %{CISCO_NAT_CONN:nat_action} %{CISCO_NAT_TYPE:nat_type} %{IP_PROTO:protocol} translation from %{CISCO_SRC} to %{CISCO_DST} duration %{CISCO_HMS_TIME:duration}
+CFWT_305013 %{CISCO_305013_REASON:reason}; Connection for %{LOWER_IP_PROTO:protocol} src %{CISCO_SRC} dst %{CISCO_DST}%{CISCO_OPT_ICMP_ATTR} denied due to %{CISCO_305013_REASON:reason}
