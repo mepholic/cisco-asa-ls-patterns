@@ -1,4 +1,7 @@
 # Cisco Simple Rules
+CISCO_TIMESTAMP %{MONTH} %{MONTHDAY} %{YEAR} %{TIME}
+CISCO_FW_TAG \%%{WORD:cisco_fw_type}-%{POSINT:cisco_severity}-%{POSINT:cisco_syslog_code}
+
 CISCO_FTP_ACTION (Stored|Retrieved)
 CISCO_ACL_ACTION (Allow|Deny)
 CISCO_NAT_CONN (Built|Teardown)
@@ -56,7 +59,7 @@ CFWT_302016 %{CISCO_NAT_CONN:nat_action} %{IP_PROTO:protocol} connection %{POSIN
 CFWT_302020 %{CISCO_NAT_CONN:nat_action} %{CISCO_DIRECTION:nat_direction} %{IP_PROTO:protocol} connection for faddr %{CISCO_IPPORT:foreign_addr} gaddr %{CISCO_IPPORT:global_addr} laddr %{CISCO_IPPORT:local_addr}
 CFWT_302021 %{CISCO_NAT_CONN:nat_action} %{IP_PROTO:protocol} connection for faddr %{CISCO_IPPORT:foreign_addr} gaddr %{CISCO_IPPORT:global_addr} laddr %{CISCO_IPPORT:local_addr}
 
-CFWT_303002 FTP connection from %{CISCO_SRC} to %{CISCO_DST}, user %{USER:ftp_user} %{CISCO_FTP_ACTION:ftp_action} file %{GREEDYDATA:ftp_file}
+CFWT_303002 FTP connection from %{CISCO_SRC} to %{CISCO_DST}, user %{DATA:ftp_user} %{CISCO_FTP_ACTION:ftp_action} file %{GREEDYDATA:ftp_file}
 
 CFWT_304001 (%{DATA:user}@)?%{IP:source_ip} Accessed URL %{IP:dest_ip}:%{GREEDYDATA:url}
 
