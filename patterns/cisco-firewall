@@ -1,1 +1,0 @@
-CISCO_FW_TAG \%%{WORD:cisco_fw_type}-%{POSINT:cisco_severity}-%{POSINT:cisco_syslog_code}: %{GREEDYDATA:message}
